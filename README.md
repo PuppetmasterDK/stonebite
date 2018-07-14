@@ -23,6 +23,11 @@ sbt run
 
 Then navigate to: ```http://localhost:9000``` this will redirect you to the documentation of the endpoints
 
+# Example:
+```
+curl -X GET "http://localhost:9000/bluesound/alrum/play" -H "accept: application/json"
+```
+
 # To Do
 * Auto discovery of players
 * Tests
