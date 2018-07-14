@@ -1,0 +1,99 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# https://www.playframework.com/documentation/latest/ScalaRouting
+# ~~~~
+
+# BlueSound
+
+###
+#  summary: List the players
+#  tags:
+#   - Players
+#  responses:
+#    200:
+#      description: The list of rooms registered
+#      schema:
+#        $ref: '#/definitions/models.Players'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /bluesound/players                controllers.BlueSoundController.getPlayers
+
+###
+#  summary: Play music
+#  tags:
+#   - Playback
+#  responses:
+#    200:
+#      description: The music was started
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /bluesound/:room/play             controllers.BlueSoundController.startToPlay(room: String)
+
+###
+#  summary: Pause music
+#  tags:
+#   - Playback
+#  responses:
+#    200:
+#      description: The music was paused
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /bluesound/:room/pause            controllers.BlueSoundController.pause(room: String)
+
+###
+#  summary: Turn the volume up 5 %
+#  tags:
+#   - Volume
+#  responses:
+#    200:
+#      description: The volume was turned up
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /bluesound/:room/volume/up        controllers.BlueSoundController.volumeUp(room: String)
+
+###
+#  summary: Turn the volume down 5 %
+#  tags:
+#   - Volume
+#  responses:
+#    200:
+#      description: The volume was turned down
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /bluesound/:room/volume/down      controllers.BlueSoundController.volumeDown(room: String)
+
+# Swagger UI
+### NoDocs ###
+GET        /docs/                            controllers.Assets.at(path="/public/swagger-ui",file="index.html")
+### NoDocs ###
+GET        /docs/*file                       controllers.Assets.at(path="/public/swagger-ui",file)
+
+### NoDocs ###
+GET   /swagger.json                 controllers.Assets.versioned(path="/public", file="swagger.json")
+
+# Redirect root do Swagger UI
+### NoDocs ###
+GET        /                                 controllers.Default.redirect(to = "/docs/")
