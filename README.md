@@ -1,7 +1,9 @@
 # StoneBite
 This simple service wraps the BlueSound players with a small web API.
 
-It have some convenience methods to ensure that pressing play does not give a break in the sound even when playing from streaming services
+It have some convenience methods to ensure that pressing play does not give a break in the sound even when playing from streaming services.
+
+The endpoints are based on the API discussion here: https://helpdesk.bluesound.com/discussions/viewtopic.php?t=2293.
 
 ## Configuration
 The configuration file contains the players and their address
@@ -36,4 +38,6 @@ curl -X GET "http://localhost:9000/bluesound/alrum/play" -H "accept: application
 
 # License
 This project is using the MIT License. See [LICENSE](LICENSE).
+
+This project is not affiliated with BlueSound or NAD in any way.
 
