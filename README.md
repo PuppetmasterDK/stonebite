@@ -6,9 +6,10 @@ It have some convenience methods to ensure that pressing play does not give a br
 The endpoints are based on the API discussion here: https://helpdesk.bluesound.com/discussions/viewtopic.php?t=2293.
 
 ## Configuration
-The configuration file contains the players and their address
+The configuration file contains the players and their addresses and a timeout in seconds
 ```
 bluesound = {
+  timeout = 5
   players = {
     alrum: "192.168.0.103"
     masterbedroom: "192.168.0.130"
