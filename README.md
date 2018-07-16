@@ -1,5 +1,7 @@
 # StoneBite
 [![Build Status](https://travis-ci.org/PuppetmasterDK/stonebite.svg?branch=master)](https://travis-ci.org/PuppetmasterDK/stonebite)
+[![Coverage Status](https://coveralls.io/repos/github/PuppetmasterDK/bluesound-swagger/badge.svg?branch=master)](https://coveralls.io/github/PuppetmasterDK/bluesound-swagger?branch=master)
+
 
 This simple service wraps the BlueSound players with a small web API.
 
