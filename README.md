@@ -1,4 +1,6 @@
 # StoneBite
+[![Build Status](https://travis-ci.org/PuppetmasterDK/stonebite.svg?branch=master)](https://travis-ci.org/PuppetmasterDK/stonebite)
+
 This simple service wraps the BlueSound players with a small web API.
 
 It have some convenience methods to ensure that pressing play does not give a break in the sound even when playing from streaming services.
