@@ -1,6 +1,7 @@
 package services
 
 import generators.{PlayerListTestCaseGenerator, TestCaseGenerator}
+import models.Error
 import org.scalatest.{EitherValues, MustMatchers, WordSpec}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import play.api.Configuration
@@ -176,6 +177,308 @@ class PlayerLikeSpec extends WordSpec
             val player = new PlayerLike(client, configuration)
             val result = Await.result(player.volumeDown(testCase.room), 10.seconds)
             result mustBe Right(testCase.playerStatus)
+          }
+        }
+      }
+    }
+  }
+
+  "Exception Path" should {
+    "Call Get Players and handle exception" in {
+      forAll(genPlayerListTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Play") => Action {
+            Ok(<state>play</state>)
+          }
+        }
+        } { implicit port =>
+          val distinctPlayers = testCase.players.copy(players = testCase.players.players.distinct)
+          WsTestClient.withClient { client =>
+            val configuration = Configuration()
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.getPlayers, 10.seconds)
+            result mustBe Left(Error(None, s"Unable to fetch players from configuration"))
+          }
+        }
+      }
+    }
+
+    "Call the GetStatus endpoint and handle an exception with unknown player" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Play") => Action {
+            throw new Exception("No")
+            InternalServerError("This should not happen")
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration()
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.getStatus(testCase.room), 10.seconds)
+            result mustBe Left(Error(None, s"Room '${testCase.room}' not found in configuration"))
+          }
+        }
+      }
+    }
+
+    "Call the Play endpoint and handle an exception with unknown player" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Play") => Action {
+            throw new Exception("No")
+            InternalServerError("This should not happen")
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration()
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.play(testCase.room), 10.seconds)
+            result mustBe Left(Error(None, s"Room '${testCase.room}' not found in configuration"))
+          }
+        }
+      }
+    }
+
+    "Call the Play endpoint and handle an exception" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Play") => Action {
+            throw new Exception("No")
+            InternalServerError("This should not happen")
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.play(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Pause endpoint and handle an exception" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Pause") => Action {
+            throw new Exception("No")
+            InternalServerError("This should not happen")
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.pause(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Volume Up endpoint and handle an exception" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Volume") => Action {
+            throw new Exception("No")
+            InternalServerError("This should not happen")
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.volumeUp(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Volume Down endpoint and handle an exception" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Volume") => Action {
+            throw new Exception("No")
+            InternalServerError("This should not happen")
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.volumeDown(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Pause endpoint and handle invalid XML" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Pause") => Action {
+            Ok(<state>pause</state>)
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>
+                {testCase.playerStatus.volume}
+              </volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.pause(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Pause endpoint and handle missing XML values" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Pause") => Action {
+            Ok(<state>pause</state>)
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.pause(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Pause endpoint and return non 200" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Pause") => Action {
+            Ok(<state>pause</state>)
+          }
+          case GET(p"/Status") => Action {
+            BadRequest(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration)
+            val result = Await.result(player.pause(testCase.room), 10.seconds)
+            result.isLeft mustBe true
           }
         }
       }

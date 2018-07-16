@@ -20,7 +20,7 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(implicit 
     try {
       Future.successful(Right(Players(configuration.get[Map[String, String]]("bluesound.players").keys.toList.sorted)))
     } catch {
-      case e: Exception => Future.successful(Left(Error(None, s"Unable to fetch players from configuration. Exception: $e")))
+      case e: Exception => Future.successful(Left(Error(None, s"Unable to fetch players from configuration")))
     }
 
   override def play(room: String): Future[Either[Error, PlayerStatus]] =
@@ -57,16 +57,21 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(implicit 
 
   override def getStatus(room: String): Future[Either[Error, PlayerStatus]] = {
     def parsePlayerResponse(response: WSResponse): Either[Error, PlayerStatus] = {
-      val playerStatus: Option[PlayerStatus] = for {
-        state <- (response.xml \ "state" headOption).map(_.text)
-        volume <- (response.xml \ "volume" headOption).map(_.text).map(_.toInt)
-      } yield PlayerStatus(List("stream", "play").contains(state), volume)
+      try {
+        val playerStatus: Option[PlayerStatus] = for {
+          state <- (response.xml \ "state" headOption).map(_.text)
+          volume <- (response.xml \ "volume" headOption).map(_.text).map(_.toInt)
+        } yield PlayerStatus(List("stream", "play").contains(state), volume)
 
-      playerStatus.map(x => Right(x)).getOrElse(Left(Error(None, s"Unable to parse XML for room '$room'. Got ${
-        response.status
-      } with body '${
-        response.body
-      }'")))
+        playerStatus.map(x => Right(x)).getOrElse(Left(Error(None, s"Unable to find state and volume in XML for room '$room'. Got ${
+          response.status
+        } with body '${
+          response.body
+        }'")))
+      } catch {
+        case e: Exception => Left(Error(None, s"Unable to parse XML: '${response.body}"))
+      }
+
     }
 
     val action = "Status"
