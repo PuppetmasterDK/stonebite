@@ -11,8 +11,25 @@ libraryDependencies += guice
 libraryDependencies += ws
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
 
+// ScalaCheck
+libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
+libraryDependencies += "org.scalamock" %% "scalamock" % "4.0.0" % Test
+
 // Configure Swagger
 swaggerDomainNameSpaces := Seq("models")
+
+val regexPackageBase = "dk\\.lutzen"
+coverageExcludedPackages :=
+  List(
+    s"$regexPackageBase\\.repository\\.Tables.*",
+    s"$regexPackageBase\\.controllers\\.javascript\\.*",
+    s"$regexPackageBase\\.controllers\\.Reverse.*",
+    "controllers\\.Assets.*",
+    "controllers\\.Reverse.*",
+    "controllers\\.javascript\\.*",
+    "router\\.*"
+  ).mkString(";")
+
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "dk.lutzen.controllers._"
 

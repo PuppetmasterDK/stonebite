@@ -36,6 +36,7 @@ curl -X GET "http://localhost:9000/bluesound/alrum/play" -H "accept: application
 * Tests
 * More control endpoints
 * Consider mapping from switch ID to room
+* Setup Guice with modules
 
 # License
 This project is using the MIT License. See [LICENSE](LICENSE).

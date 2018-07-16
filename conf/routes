@@ -19,7 +19,7 @@
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /bluesound/players                controllers.BlueSoundController.getPlayers
+GET        /players/                          controllers.BlueSoundController.getPlayers
 
 ###
 #  summary: Play music
@@ -35,7 +35,7 @@ GET        /bluesound/players                controllers.BlueSoundController.get
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /bluesound/:room/play             controllers.BlueSoundController.startToPlay(room: String)
+GET        /players/:room/play               controllers.BlueSoundController.startToPlay(room: String)
 
 ###
 #  summary: Pause music
@@ -51,7 +51,7 @@ GET        /bluesound/:room/play             controllers.BlueSoundController.sta
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /bluesound/:room/pause            controllers.BlueSoundController.pause(room: String)
+GET        /players/:room/pause              controllers.BlueSoundController.pause(room: String)
 
 ###
 #  summary: Turn the volume up 5 %
@@ -67,7 +67,7 @@ GET        /bluesound/:room/pause            controllers.BlueSoundController.pau
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /bluesound/:room/volume/up        controllers.BlueSoundController.volumeUp(room: String)
+GET        /players/:room/volume/up          controllers.BlueSoundController.volumeUp(room: String)
 
 ###
 #  summary: Turn the volume down 5 %
@@ -83,17 +83,17 @@ GET        /bluesound/:room/volume/up        controllers.BlueSoundController.vol
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /bluesound/:room/volume/down      controllers.BlueSoundController.volumeDown(room: String)
+GET        /players/:room/volume/down        controllers.BlueSoundController.volumeDown(room: String)
 
 # Swagger UI
 ### NoDocs ###
-GET        /docs/                            controllers.Assets.at(path="/public/swagger-ui",file="index.html")
+GET        /docs/                              controllers.Assets.at(path="/public/swagger-ui",file="index.html")
 ### NoDocs ###
-GET        /docs/*file                       controllers.Assets.at(path="/public/swagger-ui",file)
+GET        /docs/*file                         controllers.Assets.at(path="/public/swagger-ui",file)
 
 ### NoDocs ###
-GET   /swagger.json                 controllers.Assets.versioned(path="/public", file="swagger.json")
+GET        /swagger.json                       controllers.Assets.versioned(path="/public", file="swagger.json")
 
 # Redirect root do Swagger UI
 ### NoDocs ###
-GET        /                                 controllers.Default.redirect(to = "/docs/")
+GET        /                                   controllers.Default.redirect(to = "/docs/")
