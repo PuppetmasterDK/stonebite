@@ -30,6 +30,16 @@ sbt run
 
 Then navigate to: ```http://localhost:9000``` this will redirect you to the documentation of the endpoints
 
+## Running the tests:
+To run the tests with no coverage information collected:
+```
+sbt test
+```
+Run with coverage:
+```
+sbt clean coverage test coverageReport
+```
+
 # Example:
 ```
 curl -X GET "http://localhost:9000/bluesound/alrum/play" -H "accept: application/json"
@@ -37,7 +47,6 @@ curl -X GET "http://localhost:9000/bluesound/alrum/play" -H "accept: application
 
 # To Do
 * Auto discovery of players
-* Tests
 * More control endpoints
 * Consider mapping from switch ID to room
 * Setup Guice with modules
