@@ -3,21 +3,18 @@ package controllers
 import akka.actor.ActorSystem
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
-import generators.{ErrorGenerator, PlayerStatusGenerator}
+import generators.{PlayerListTestCaseGenerator, TestCaseGenerator}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{EitherValues, Matchers, MustMatchers, WordSpec}
+import org.scalatest.{EitherValues, MustMatchers, WordSpec}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import services.Player
-import org.scalacheck.Gen
-import models.{Error, PlayerStatus, Players}
+import models._
 import play.api.Configuration
 import play.api.http.Status
 import play.api.libs.concurrent.Futures._
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{GET, contentAsJson, contentType, status, stubControllerComponents}
-import play.api.libs.concurrent.Futures
-import play.api.libs.concurrent.DefaultFutures
 import protocols.JsonProtocol
 
 import scala.concurrent.{Future, TimeoutException}
@@ -26,8 +23,8 @@ import scala.concurrent.duration._
 
 class BlueSoundControllerSpec extends WordSpec
   with GeneratorDrivenPropertyChecks
-  with PlayerStatusGenerator
-  with ErrorGenerator
+  with TestCaseGenerator
+  with PlayerListTestCaseGenerator
   with MockFactory
   with EitherValues
   with MustMatchers
@@ -38,21 +35,6 @@ class BlueSoundControllerSpec extends WordSpec
 
   implicit val actorSystem = ActorSystem("testActorSystem", ConfigFactory.load())
   implicit val timeout: Timeout = 5.seconds
-
-  case class TestCase(room: String, playerStatus: PlayerStatus, error: Error)
-
-  case class PlayerListTestCase(players: Players, error: Error)
-
-  private def genTestCase: Gen[TestCase] = for {
-    room <- Gen.alphaNumStr
-    playerStatus <- genPlayerStatus()
-    error <- genError(playerStatus)
-  } yield TestCase(room, playerStatus, error)
-
-  private def genPlayerListTestCase: Gen[PlayerListTestCase] = for {
-    list <- Gen.listOf(Gen.alphaNumStr)
-    error <- genError()
-  } yield PlayerListTestCase(Players(list), error)
 
   "BlueSoundController Happy Path" should {
 

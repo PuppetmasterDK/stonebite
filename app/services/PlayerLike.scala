@@ -11,16 +11,16 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(implicit 
 
   private def roomToAddress(room: String): Either[Error, String] =
     try {
-      Right("http://" + configuration.get[String](s"bluesound.players.$room") + ":11000")
+      Right(configuration.get[String](s"bluesound.players.$room"))
     } catch {
       case e: Exception => Left(Error(None, s"Room '$room' not found in configuration"))
     }
 
   override def getPlayers: Future[Either[Error, Players]] =
     try {
-      Future.successful(Right(Players(configuration.get[Map[String, String]]("bluesound.players").map(_._1).toList)))
+      Future.successful(Right(Players(configuration.get[Map[String, String]]("bluesound.players").keys.toList.sorted)))
     } catch {
-      case e: Exception => Future.successful(Left(Error(None, s"Unable to fetch players from configration")))
+      case e: Exception => Future.successful(Left(Error(None, s"Unable to fetch players from configuration. Exception: $e")))
     }
 
   override def play(room: String): Future[Either[Error, PlayerStatus]] =
