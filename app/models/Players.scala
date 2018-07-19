@@ -1,3 +1,3 @@
 package models
 
-case class Players(players: List[String])
+case class Players(players: Map[String, String])

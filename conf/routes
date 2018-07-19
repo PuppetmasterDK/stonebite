@@ -85,6 +85,86 @@ GET        /players/:room/volume/up          controllers.BlueSoundController.vol
 ###
 GET        /players/:room/volume/down        controllers.BlueSoundController.volumeDown(room: String)
 
+###
+#  summary: Set the volume to specified value
+#  tags:
+#   - Volume
+#  responses:
+#    200:
+#      description: The volume was turned down
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /players/:room/volume/:volume        controllers.BlueSoundController.volume(room: String, volume: Int)
+
+###
+#  summary: Status
+#  tags:
+#   - Players
+#  responses:
+#    200:
+#      description: The status of the player
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /players/:room              controllers.BlueSoundController.status(room: String)
+
+###
+#  summary: Play the given playlist
+#  tags:
+#   - Playback
+#  responses:
+#    200:
+#      description: The status of the player
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /players/:room/play/playlist/:playlist              controllers.BlueSoundController.playlist(room: String, playlist: String)
+
+###
+#  summary: Play the given artist
+#  tags:
+#   - Playback
+#  responses:
+#    200:
+#      description: The status of the player
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /players/:room/play/artist/:artist              controllers.BlueSoundController.artist(room: String, artist: String)
+
+###
+#  summary: Used when a wall panel is clicked with a button
+#  tags:
+#   - Control
+#  responses:
+#    200:
+#      description: The workflow was started
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+GET        /panels/:panelId/button/:buttonId        controllers.PanelController.handlePanelCall(panelId, buttonId)
+
 # Swagger UI
 ### NoDocs ###
 GET        /docs/                              controllers.Assets.at(path="/public/swagger-ui",file="index.html")

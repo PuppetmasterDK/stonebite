@@ -1,7 +1,7 @@
 package services
 
 import generators.{PlayerListTestCaseGenerator, TestCaseGenerator}
-import models.Error
+import models.{Error, Players}
 import org.scalatest.{EitherValues, MustMatchers, WordSpec}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import play.api.Configuration
@@ -10,7 +10,7 @@ import play.api.routing.sird._
 import play.api.mvc._
 import play.api.test._
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -30,28 +30,6 @@ class PlayerLikeSpec extends WordSpec
 
   "PlayerLike Happy Path" should {
 
-    "Call Get Players" in {
-      forAll(genPlayerListTestCase) { testCase =>
-        Server.withRouterFromComponents() { components =>
-          import Results._
-          import components.{defaultActionBuilder => Action}
-        {
-          case GET(p"/Play") => Action {
-            Ok(<state>play</state>)
-          }
-        }
-        } { implicit port =>
-          val distinctPlayers = testCase.players.copy(players = testCase.players.players.distinct)
-          WsTestClient.withClient { client =>
-            val configuration = Configuration(distinctPlayers.players.map(p => s"bluesound.players.${p}" -> p).toList: _*)
-            val player = new PlayerLike(client, configuration)
-            val result = Await.result(player.getPlayers, 10.seconds)
-            result mustBe Right(distinctPlayers.copy(players = distinctPlayers.players.sorted))
-          }
-        }
-      }
-    }
-
     "Call the Play endpoint" in {
       forAll(genTestCase) { testCase =>
         Server.withRouterFromComponents() { components =>
@@ -67,14 +45,16 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.play(testCase.room), 10.seconds)
             result mustBe Right(testCase.playerStatus)
           }
@@ -97,14 +77,16 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.pause(testCase.room), 10.seconds)
             result mustBe Right(testCase.playerStatus)
           }
@@ -123,7 +105,7 @@ class PlayerLikeSpec extends WordSpec
             if (request.getQueryString("level").contains(expectedVolume)) {
               Ok(<state>pause</state>)
             } else {
-              BadRequest(s"Query String: ${request.getQueryString("level")} != ${expectedVolume}")
+              BadRequest(s"Query String: ${request.getQueryString("level")} != $expectedVolume")
             }
           }
           case GET(p"/Status") => Action {
@@ -132,14 +114,16 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.volumeUp(testCase.room), 10.seconds)
             result mustBe Right(testCase.playerStatus)
           }
@@ -158,7 +142,7 @@ class PlayerLikeSpec extends WordSpec
             if (request.getQueryString("level").contains(expectedVolume)) {
               Ok(<state>pause</state>)
             } else {
-              BadRequest(s"Query String: ${request.getQueryString("level")} != ${expectedVolume}")
+              BadRequest(s"Query String: ${request.getQueryString("level")} != $expectedVolume")
             }
           }
           case GET(p"/Status") => Action {
@@ -167,15 +151,126 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.volumeDown(testCase.room), 10.seconds)
+            result mustBe Right(testCase.playerStatus)
+          }
+        }
+      }
+    }
+
+    "Call the Volume endpoint" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Volume") => Action { request =>
+            val expectedVolume = testCase.playerStatus.volume.toString
+            if (request.getQueryString("level").contains(expectedVolume)) {
+              Ok(<state>pause</state>)
+            } else {
+              BadRequest(s"Query String: ${request.getQueryString("level")} != $expectedVolume")
+            }
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
+            val result = Await.result(player.volume(testCase.room, testCase.playerStatus.volume), 10.seconds)
+            result mustBe Right(testCase.playerStatus)
+          }
+        }
+      }
+    }
+
+    "Call the Add endpoint to queue Playlist" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Add") => Action { request =>
+            if (request.getQueryString("playlist").contains(testCase.playlist)) {
+              Ok("...")
+            } else {
+              BadRequest(s"Query String: ${request.getQueryString("playlist")} != ${testCase.playlist}")
+            }
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
+            val result = Await.result(player.playPlaylist(testCase.room, testCase.playlist), 10.seconds)
+            result mustBe Right(testCase.playerStatus)
+          }
+        }
+      }
+    }
+
+    "Call the Add endpoint to queue Artist" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Add") => Action { request =>
+            if (request.getQueryString("artist").contains(testCase.artist)) {
+              Ok("...")
+            } else {
+              BadRequest(s"Query String: ${request.getQueryString("artist")} != ${testCase.artist}")
+            }
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
+            val result = Await.result(player.playArtist(testCase.room, testCase.artist), 10.seconds)
             result mustBe Right(testCase.playerStatus)
           }
         }
@@ -184,89 +279,6 @@ class PlayerLikeSpec extends WordSpec
   }
 
   "Exception Path" should {
-    "Call Get Players and handle exception" in {
-      forAll(genPlayerListTestCase) { testCase =>
-        Server.withRouterFromComponents() { components =>
-          import Results._
-          import components.{defaultActionBuilder => Action}
-        {
-          case GET(p"/Play") => Action {
-            Ok(<state>play</state>)
-          }
-        }
-        } { implicit port =>
-          val distinctPlayers = testCase.players.copy(players = testCase.players.players.distinct)
-          WsTestClient.withClient { client =>
-            val configuration = Configuration()
-            val player = new PlayerLike(client, configuration)
-            val result = Await.result(player.getPlayers, 10.seconds)
-            result mustBe Left(Error(None, s"Unable to fetch players from configuration"))
-          }
-        }
-      }
-    }
-
-    "Call the GetStatus endpoint and handle an exception with unknown player" in {
-      forAll(genTestCase) { testCase =>
-        Server.withRouterFromComponents() { components =>
-          import Results._
-          import components.{defaultActionBuilder => Action}
-        {
-          case GET(p"/Play") => Action {
-            throw new Exception("No")
-            InternalServerError("This should not happen")
-          }
-          case GET(p"/Status") => Action {
-            Ok(<status>
-              <state>{if (testCase.playerStatus.isPlaying) {
-                "play"
-              } else {
-                "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
-            </status>)
-          }
-        }
-        } { implicit port =>
-          WsTestClient.withClient { client =>
-            val configuration = Configuration()
-            val player = new PlayerLike(client, configuration)
-            val result = Await.result(player.getStatus(testCase.room), 10.seconds)
-            result mustBe Left(Error(None, s"Room '${testCase.room}' not found in configuration"))
-          }
-        }
-      }
-    }
-
-    "Call the Play endpoint and handle an exception with unknown player" in {
-      forAll(genTestCase) { testCase =>
-        Server.withRouterFromComponents() { components =>
-          import Results._
-          import components.{defaultActionBuilder => Action}
-        {
-          case GET(p"/Play") => Action {
-            throw new Exception("No")
-            InternalServerError("This should not happen")
-          }
-          case GET(p"/Status") => Action {
-            Ok(<status>
-              <state>{if (testCase.playerStatus.isPlaying) {
-                "play"
-              } else {
-                "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
-            </status>)
-          }
-        }
-        } { implicit port =>
-          WsTestClient.withClient { client =>
-            val configuration = Configuration()
-            val player = new PlayerLike(client, configuration)
-            val result = Await.result(player.play(testCase.room), 10.seconds)
-            result mustBe Left(Error(None, s"Room '${testCase.room}' not found in configuration"))
-          }
-        }
-      }
-    }
 
     "Call the Play endpoint and handle an exception" in {
       forAll(genTestCase) { testCase =>
@@ -284,14 +296,16 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.play(testCase.room), 10.seconds)
             result.isLeft mustBe true
           }
@@ -315,14 +329,16 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.pause(testCase.room), 10.seconds)
             result.isLeft mustBe true
           }
@@ -346,14 +362,16 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.volumeUp(testCase.room), 10.seconds)
             result.isLeft mustBe true
           }
@@ -377,15 +395,50 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.volumeDown(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Volume endpoint and handle an exception" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case GET(p"/Volume") => Action {
+            throw new Exception("No")
+            InternalServerError("This should not happen")
+          }
+          case GET(p"/Status") => Action {
+            Ok(<status>
+              <state>{if (testCase.playerStatus.isPlaying) {
+                "play"
+              } else {
+                "pause"
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
+            </status>)
+          }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
+            val result = Await.result(player.volume(testCase.room, testCase.playerStatus.volume), 10.seconds)
             result.isLeft mustBe true
           }
         }
@@ -409,14 +462,16 @@ class PlayerLikeSpec extends WordSpec
                 "pause"
               }}</state> <volume>
                 {testCase.playerStatus.volume}
-              </volume>
+              </volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.pause(testCase.room), 10.seconds)
             result.isLeft mustBe true
           }
@@ -446,7 +501,9 @@ class PlayerLikeSpec extends WordSpec
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.pause(testCase.room), 10.seconds)
             result.isLeft mustBe true
           }
@@ -469,14 +526,16 @@ class PlayerLikeSpec extends WordSpec
                 "play"
               } else {
                 "pause"
-              }}</state> <volume>{testCase.playerStatus.volume}</volume>
+              }}</state> <volume>{testCase.playerStatus.volume}</volume><sleep>{testCase.playerStatus.sleep.getOrElse("")}</sleep>
             </status>)
           }
         }
         } { implicit port =>
           WsTestClient.withClient { client =>
             val configuration = Configuration(s"bluesound.players.${testCase.room}" -> "")
-            val player = new PlayerLike(client, configuration)
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map(testCase.room -> ""))))
+            }
             val result = Await.result(player.pause(testCase.room), 10.seconds)
             result.isLeft mustBe true
           }

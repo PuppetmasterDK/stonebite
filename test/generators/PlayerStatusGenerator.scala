@@ -8,7 +8,8 @@ trait PlayerStatusGenerator {
   def genPlayerStatus(): Gen[PlayerStatus] =
     for {
       isPlaying <- Gen.oneOf(false, true)
-      volume <- Gen.choose(Int.MinValue, Int.MaxValue)
-    } yield PlayerStatus(isPlaying, volume)
+      volume <- Gen.choose(0, 100)
+      sleep <- Gen.option(Gen.oneOf(15, 30, 45, 60, 90))
+    } yield PlayerStatus(isPlaying, volume, sleep)
 
 }

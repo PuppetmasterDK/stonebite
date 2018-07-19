@@ -18,6 +18,14 @@ libraryDependencies += "org.scalamock" %% "scalamock" % "4.0.0" % Test
 // Configure Swagger
 swaggerDomainNameSpaces := Seq("models")
 
+// Cats
+libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.1"
+
+// mDNS
+// https://mvnrepository.com/artifact/net.straylightlabs/hola
+libraryDependencies += "net.straylightlabs" % "hola" % "0.2.2"
+
+
 val regexPackageBase = "dk\\.lutzen"
 coverageExcludedPackages :=
   List(
@@ -29,6 +37,8 @@ coverageExcludedPackages :=
     "controllers\\.javascript\\.*",
     "router\\.*"
   ).mkString(";")
+
+scalacOptions += "-Ypartial-unification"
 
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "dk.lutzen.controllers._"
