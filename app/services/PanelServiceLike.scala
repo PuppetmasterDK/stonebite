@@ -11,7 +11,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
-  extends PanelService {
+    extends PanelService {
 
   private val panels: mutable.Map[String, mutable.Map[String, Workflow]] = mutable.Map()
   /*Map(
@@ -31,6 +31,18 @@ class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
     )
   )
    */
+
+  panels.put(
+    "alrum",
+    mutable.Map(
+      "night" -> Workflow(rooms = List("Alrum - Bord"),
+                          pressPlay = true,
+                          volume = Some(20),
+                          playlist = Some("Bryllup")),
+      "volumeUp"   -> Workflow(rooms = List("Alrum - Bord"), volumeUp = true),
+      "volumeDown" -> Workflow(rooms = List("Alrum - Bord"), volumeDown = true)
+    )
+  )
 
   override def addWorkflow(panelId: String,
                            buttonId: String,
@@ -65,22 +77,10 @@ class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
       }
     }
 
-  private def triggerWorkflow(workflow: Workflow): Future[Either[Error, Boolean]] = {
+  private def triggerWorkflow(workflow: Workflow): Future[Either[Error, Boolean]] =
     if (workflow.rooms.isEmpty) {
       Future.successful(Left(Error(None, "No rooms specified in workflow")))
     } else {
-
-      val play: Future[List[Either[Error, PlayerStatus]]] = if (workflow.pressPlay) {
-        Future.sequence(workflow.rooms.map(player.play))
-      } else {
-        Future.successful(Nil)
-      }
-
-      val pause: Future[List[Either[Error, PlayerStatus]]] = if (workflow.pressPause) {
-        Future.sequence(workflow.rooms.map(player.pause))
-      } else {
-        Future.successful(Nil)
-      }
 
       val volumeUp: Future[List[Either[Error, PlayerStatus]]] = if (workflow.volumeUp) {
         Future.sequence(workflow.rooms.map(player.volumeUp))
@@ -97,15 +97,16 @@ class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
       def handleResult(result: Future[List[Either[Error, PlayerStatus]]], action: String) = {
 
         result.foreach(z => Logger.debug(s"handleResult $action: BEFORE $z"))
-        val t1: Future[List[Either[Error, PlayerStatus]]] = result.map(
-          _.filter(t => t.isLeft))
+        val t1: Future[List[Either[Error, PlayerStatus]]] = result.map(_.filter(t => t.isLeft))
         t1.foreach(z => Logger.debug(s"handleResult $action: T1 $t1"))
         val t2 = t1.map(_.isEmpty)
         t2.foreach(z => Logger.debug(s"handleResult $action: T2 $t2"))
 
         val x = result.map(
           _.filter(t => t.isLeft)
-            .foreach(e => Logger.error(s"handleResult $action: Unable to trigger '$action' in workflow: $e: $workflow"))
+            .foreach(e =>
+              Logger.error(
+                s"handleResult $action: Unable to trigger '$action' in workflow: $e: $workflow"))
             .isEmpty)
 
         x.foreach(z => Logger.debug(s"handleResult $action: X $z"))
@@ -115,6 +116,8 @@ class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
 
       val volume: Future[List[Either[Error, PlayerStatus]]] = Future.sequence(
         workflow.rooms.flatMap(room => workflow.volume.map(v => player.volume(room, v))))
+      val sleep: Future[List[Either[Error, PlayerStatus]]] = Future.sequence(
+        workflow.rooms.flatMap(room => workflow.sleep.map(s => player.sleep(room, s))))
 
       val playlist: Future[List[Either[Error, PlayerStatus]]] = Future.sequence(
         workflow.rooms.flatMap(room => workflow.playlist.map(p => player.playPlaylist(room, p))))
@@ -122,17 +125,31 @@ class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
       val artist: Future[List[Either[Error, PlayerStatus]]] = Future.sequence(
         workflow.rooms.flatMap(room => workflow.artist.map(a => player.playArtist(room, a))))
 
+      val play: Future[List[Either[Error, PlayerStatus]]] = if (workflow.pressPlay) {
+        Future.sequence(workflow.rooms.map(player.play))
+      } else {
+        Future.successful(Nil)
+      }
+
+      val pause: Future[List[Either[Error, PlayerStatus]]] = if (workflow.pressPause) {
+        Future.sequence(workflow.rooms.map(player.pause))
+      } else {
+        Future.successful(Nil)
+      }
+
       for {
-        playResult <- handleResult(play, "play")
-        pauseResult <- handleResult(pause, "pause")
-        volumeUpResult <- handleResult(volumeUp, "volumeUp")
+        volumeUpResult   <- handleResult(volumeUp, "volumeUp")
         volumeDownResult <- handleResult(volumeDown, "volumeDown")
-        volumeResult <- handleResult(volume, "volume")
-        playlistResult <- handleResult(playlist, "playlist")
-        artistResult <- handleResult(artist, "artist")
+        volumeResult     <- handleResult(volume, "volume")
+        sleepResult      <- handleResult(sleep, "sleep")
+        playlistResult   <- handleResult(playlist, "playlist")
+        artistResult     <- handleResult(artist, "artist")
+        pauseResult      <- handleResult(pause, "pause")
+        playResult       <- handleResult(play, "play")
       } yield {
 
-        Logger.debug(s"Trigger Result: $playResult &&  $pauseResult &&  $volumeUpResult &&  $volumeDownResult &&  $volumeResult &&  $playlistResult &&  $artistResult")
+        Logger.debug(
+          s"Trigger Result: $playResult &&  $pauseResult &&  $volumeUpResult &&  $volumeDownResult &&  $volumeResult &&  $playlistResult &&  $artistResult && $sleepResult")
 
         Right[Error, Boolean](
           playResult &&
@@ -141,9 +158,9 @@ class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
             volumeDownResult &&
             volumeResult &&
             playlistResult &&
-            artistResult)
+            artistResult &&
+        sleepResult)
       }
     }
-  }
 
 }

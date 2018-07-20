@@ -35,7 +35,7 @@ GET        /players/                          controllers.BlueSoundController.ge
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /players/:room/play               controllers.BlueSoundController.startToPlay(room: String)
+POST        /players/:room/play               controllers.BlueSoundController.startToPlay(room: String)
 
 ###
 #  summary: Pause music
@@ -51,7 +51,7 @@ GET        /players/:room/play               controllers.BlueSoundController.sta
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /players/:room/pause              controllers.BlueSoundController.pause(room: String)
+POST        /players/:room/pause              controllers.BlueSoundController.pause(room: String)
 
 ###
 #  summary: Turn the volume up 5 %
@@ -67,7 +67,7 @@ GET        /players/:room/pause              controllers.BlueSoundController.pau
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /players/:room/volume/up          controllers.BlueSoundController.volumeUp(room: String)
+POST        /players/:room/volume/up          controllers.BlueSoundController.volumeUp(room: String)
 
 ###
 #  summary: Turn the volume down 5 %
@@ -83,7 +83,7 @@ GET        /players/:room/volume/up          controllers.BlueSoundController.vol
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /players/:room/volume/down        controllers.BlueSoundController.volumeDown(room: String)
+POST        /players/:room/volume/down        controllers.BlueSoundController.volumeDown(room: String)
 
 ###
 #  summary: Set the volume to specified value
@@ -99,7 +99,23 @@ GET        /players/:room/volume/down        controllers.BlueSoundController.vol
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /players/:room/volume/:volume        controllers.BlueSoundController.volume(room: String, volume: Int)
+POST        /players/:room/volume/:volume        controllers.BlueSoundController.volume(room: String, volume: Int)
+
+###
+#  summary: Set the sleep value
+#  tags:
+#   - Playback
+#  responses:
+#    200:
+#      description: The player will now sleep after the amount of time
+#      schema:
+#        $ref: '#/definitions/models.PlayerStatus'
+#    500:
+#      description: An error occurred
+#      schema:
+#        $ref: '#/definitions/models.Error'
+###
+POST        /players/:room/sleep/:sleep        controllers.BlueSoundController.sleep(room: String, sleep: Int)
 
 ###
 #  summary: Status
@@ -131,7 +147,7 @@ GET        /players/:room              controllers.BlueSoundController.status(ro
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /players/:room/play/playlist/:playlist              controllers.BlueSoundController.playlist(room: String, playlist: String)
+POST        /players/:room/play/playlist/:playlist              controllers.BlueSoundController.playlist(room: String, playlist: String)
 
 ###
 #  summary: Play the given artist
@@ -147,7 +163,7 @@ GET        /players/:room/play/playlist/:playlist              controllers.BlueS
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /players/:room/play/artist/:artist              controllers.BlueSoundController.artist(room: String, artist: String)
+POST        /players/:room/play/artist/:artist              controllers.BlueSoundController.artist(room: String, artist: String)
 
 ###
 #  summary: Used when a wall panel is clicked with a button
@@ -163,7 +179,7 @@ GET        /players/:room/play/artist/:artist              controllers.BlueSound
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-GET        /panels/:panelId/button/:buttonId        controllers.PanelController.handlePanelCall(panelId, buttonId)
+POST        /panels/:panelId/button/:buttonId        controllers.PanelController.handlePanelCall(panelId, buttonId)
 
 # Swagger UI
 ### NoDocs ###

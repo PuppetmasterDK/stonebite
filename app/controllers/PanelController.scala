@@ -34,8 +34,8 @@ class PanelController @Inject()(
   }
 
   private def handleResponse: PartialFunction[Either[Error, Boolean], Result] = {
-    case Right(success) => Ok(Json.toJson("success" -> success))
-    case Left(error)         => InternalServerError(Json.toJson(error))
+    case Right(success) => Ok(Json.toJson(Map("success" -> success)))
+    case Left(error)    => InternalServerError(Json.toJson(error))
   }
 
   private def handleExceptions: PartialFunction[Throwable, Result] = {

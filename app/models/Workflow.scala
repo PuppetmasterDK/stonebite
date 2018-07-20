@@ -10,7 +10,8 @@ package models
   * @param volumeDown Should we turn the volume down?
   * @param volume     Should we set the volume to a specific amount?
   * @param playlist   Should we change to a playlist
-  * @param artist     Should we play a specific artist?ﬂ
+  * @param artist     Should we play a specific artist?
+  * @param sleep      Should we enable the sleep function?ﬂ
   */
 case class Workflow(
     rooms: List[String] = Nil,
@@ -20,5 +21,6 @@ case class Workflow(
     volumeDown: Boolean = false,
     volume: Option[Int] = None,
     playlist: Option[String] = None,
-    artist: Option[String] = None
+    artist: Option[String] = None,
+    sleep: Option[Int] = None
 )

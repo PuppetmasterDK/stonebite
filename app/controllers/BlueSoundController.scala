@@ -112,4 +112,12 @@ class BlueSoundController @Inject()(cc: ControllerComponents,
       .map(handleResponse)
       .recover(handleExceptions)
   }
+
+  def sleep(room: String, sleep: Int): Action[AnyContent] = Action.async {
+    player
+      .sleep(room, sleep)
+      .withTimeout(defaultTimeout)
+      .map(handleResponse)
+      .recover(handleExceptions)
+  }
 }

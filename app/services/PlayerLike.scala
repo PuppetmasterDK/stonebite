@@ -8,8 +8,9 @@ import play.api.libs.ws.{WSClient, WSResponse}
 import scala.concurrent.{ExecutionContext, Future}
 
 class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
-    implicit val ec: ExecutionContext)
-    extends Player with PlayerDiscoveryLike {
+  implicit val ec: ExecutionContext)
+  extends Player
+    with PlayerDiscoveryLike {
 
   private def roomToAddress(room: String): Future[Either[Error, String]] =
     getPlayers.map {
@@ -56,15 +57,19 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
     def parsePlayerResponse(response: WSResponse): Either[Error, PlayerStatus] =
       try {
         val playerStatus: Option[PlayerStatus] = for {
-          state  <- (response.xml \ "state" headOption).map(_.text)
+          state <- (response.xml \ "state" headOption).map(_.text)
           volume <- (response.xml \ "volume" headOption).map(_.text).map(_.toInt)
         } yield
-          PlayerStatus(List("stream", "play").contains(state),
-                       volume,
-                       (response.xml \ "sleep" headOption).map(_.text).filterNot(_.isEmpty).map(_.toInt))
+          PlayerStatus(
+            List("stream", "play").contains(state),
+            volume,
+            (response.xml \ "sleep" headOption).map(_.text).filterNot(_.isEmpty).map(_.toInt))
 
         playerStatus
-          .map(x => Right(x))
+          .map { x =>
+            Logger.debug(s"Room '$room' has status $x")
+            Right(x)
+          }
           .getOrElse(Left(Error(
             None,
             s"Unable to find state and volume in XML for room '$room'. Got ${response.status} with body '${response.body}'")))
@@ -90,7 +95,7 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
           .flatMap { response: WSResponse =>
             response.status match {
               case 200 => success(room, response)
-              case _   => Future.successful(Left(Error(None, errorMessage(response))))
+              case _ => Future.successful(Left(Error(None, errorMessage(response))))
             }
           }
       case Left(error) => Future.successful(Left(error))
@@ -98,16 +103,16 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
   }
 
   private def doAction(
-      room: String,
-      action: String,
-      errorMessage: (String, WSResponse) => String = { (room, response) =>
-        s"Unable to play in room '$room'. Got: HTTP Code: ${response.status} with body: '${response.body}'"
-      },
-      success: (String, WSResponse) => Future[Either[Error, PlayerStatus]] = { (response, _) =>
-        getStatus(response)
-      },
-      getArguments: PlayerStatus => List[(String, String)] = _ => List.empty
-  ): Future[Either[Error, PlayerStatus]] = {
+                        room: String,
+                        action: String,
+                        errorMessage: (String, WSResponse) => String = { (room, response) =>
+                          s"Unable to play in room '$room'. Got: HTTP Code: ${response.status} with body: '${response.body}'"
+                        },
+                        success: (String, WSResponse) => Future[Either[Error, PlayerStatus]] = { (response, _) =>
+                          getStatus(response)
+                        },
+                        getArguments: PlayerStatus => List[(String, String)] = _ => List.empty
+                      ): Future[Either[Error, PlayerStatus]] = {
 
     Logger.debug(s"Start '$action' in room '$room'")
     roomToAddress(room).flatMap {
@@ -147,12 +152,12 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
       action = "Add",
       getArguments = { _ =>
         List(
-          "service"    -> "LocalMusic",
-          "playnow"    -> "1",
+          "service" -> "LocalMusic",
+          "playnow" -> "1",
           "playlistid" -> playlist,
-          "clear"      -> "1",
-          "listindex"  -> "0",
-          "playlist"   -> playlist
+          "clear" -> "1",
+          "listindex" -> "0",
+          "playlist" -> playlist
         )
       }
     )
@@ -163,41 +168,83 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
       action = "Add",
       getArguments = { _ =>
         List(
-          "service"   -> "LocalMusic",
-          "playnow"   -> "1",
-          "where"     -> "last",
-          "all"       -> "1",
+          "service" -> "LocalMusic",
+          "playnow" -> "1",
+          "where" -> "last",
+          "all" -> "1",
           "listindex" -> "0",
-          "nextlist"  -> "1",
-          "cursor"    -> "last",
-          "artist"    -> artist
+          "nextlist" -> "1",
+          "cursor" -> "last",
+          "artist" -> artist
         )
       }
     )
 
   override def sleep(room: String, time: Int): Future[Either[Error, PlayerStatus]] =
     getStatus(room).flatMap {
+      case Right(playerStatus) if time == 0 && playerStatus.sleep.isEmpty => Future.successful(Right(playerStatus))
+      case Right(playerStatus) if time == 0 || playerStatus.sleep.getOrElse(0) < time =>
+        callSleepEndpoint(room).flatMap {
+          case Right(_) => sleep(room, time)
+          case Left(error) => Future.successful(Left(error))
+        }
+      case Right(playerStatus) => Future.successful(Right(playerStatus))
+      case Left(error) => Future.successful(Left(error))
+    }
+
+  private def callSleepEndpoint(room: String): Future[Either[Error, Boolean]] =
+    roomToAddress(room).flatMap {
+      case Right(url) =>
+        Logger.debug(s"Calling 'sleep' endpoint for $room")
+        ws.url(s"$url/Sleep")
+          .get()
+          .map { response: WSResponse =>
+            response.status match {
+              case 200 => Right(true)
+              case _ =>
+                Left(Error(
+                  None,
+                  s"Calling Sleep for room '$room' failed with status: '${response.status}' and body '${response.body}'"))
+            }
+          }
+      case Left(error) => Future.successful(Left(error))
+
+    }
+
+  /*
+  override def sleep(room: String, time: Int): Future[Either[Error, PlayerStatus]] =
+    getStatus(room).flatMap {
       case Right(playerStatus) =>
         playerStatus.sleep match {
           case Some(timeout) if timeout < time =>
-            callSleepEndpoint(room).flatMap {
-              case Right(_)    => sleep(room, time)
+            callSleepEndpoint(room, time).flatMap {
+              case Right(_) => sleep(room, time)
               case Left(error) => Future.successful(Left(error))
             }
           case Some(_) => Future.successful(Right(playerStatus))
-          case None    => sleep(room, time)
+          case None if time != 0 => callSleepEndpoint(room, time)
+          case None => getStatus(room)
         }
       case Left(error) => Future.successful(Left(error))
     }
 
-  private def callSleepEndpoint(room: String): Future[Either[Error, PlayerStatus]] =
+  private def callSleepEndpoint(room: String, time: Int): Future[Either[Error, PlayerStatus]] =
     roomToAddress(room).flatMap {
       case Right(url) =>
         ws.url(s"$url/Sleep")
           .get()
           .flatMap { response: WSResponse =>
             response.status match {
-              case 200 => getStatus(room)
+              case 200 => {
+                Logger.debug(s"SLEEP: ${(response.xml \ "sleep")}")
+                val sleepValue: Option[Int] = (response.xml \ "sleep" headOption).map(_.text).filterNot(_.isEmpty).map(_.toInt)
+                Logger.debug(s"Room '$room' now has sleep: '$sleepValue' in response ${response.body}")
+                if (sleepValue.contains(time)) {
+                  getStatus(room)
+                } else {
+                  callSleepEndpoint(room, time)
+                }
+              }
               case _ =>
                 Future.successful(Left(Error(
                   None,
@@ -207,4 +254,6 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
       case Left(error) => Future.successful(Left(error))
 
     }
+
+ */
 }
