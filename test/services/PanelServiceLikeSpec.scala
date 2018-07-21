@@ -54,6 +54,10 @@ class PanelServiceLikeSpec
           testCase.workflow.rooms.foreach(room =>
             playerService.playArtist _ when (room, artist) returns Future.successful(
               Right(testCase.playerStatus))))
+        testCase.workflow.sleep.foreach(sleep =>
+          testCase.workflow.rooms.foreach(room =>
+            playerService.sleep _ when (room, sleep) returns Future.successful(
+              Right(testCase.playerStatus))))
 
         val panelService = new PanelServiceLike(playerService)
         Await.result(panelService.addWorkflow(testCase.panelId,
@@ -104,6 +108,10 @@ class PanelServiceLikeSpec
         testCase.workflow.artist.foreach(artist =>
           testCase.workflow.rooms.foreach(room =>
             playerService.playArtist _ when (room, artist) returns Future.successful(
+              Right(testCase.playerStatus))))
+        testCase.workflow.sleep.foreach(sleep =>
+          testCase.workflow.rooms.foreach(room =>
+            playerService.sleep _ when (room, sleep) returns Future.successful(
               Right(testCase.playerStatus))))
 
         val panelService = new PanelServiceLike(playerService)

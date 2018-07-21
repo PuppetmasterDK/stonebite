@@ -179,7 +179,7 @@ POST        /players/:room/play/artist/:artist              controllers.BlueSoun
 #      schema:
 #        $ref: '#/definitions/models.Error'
 ###
-POST        /panels/:panelId/button/:buttonId        controllers.PanelController.handlePanelCall(panelId, buttonId)
+GET        /panels/:panelId/button/:buttonId        controllers.PanelController.handlePanelCall(panelId, buttonId)
 
 # Swagger UI
 ### NoDocs ###

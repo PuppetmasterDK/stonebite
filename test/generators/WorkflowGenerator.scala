@@ -14,6 +14,7 @@ trait WorkflowGenerator {
     volume <- Gen.option(Gen.chooseNum(0, 100))
     playlist <- Gen.option(Gen.alphaNumStr)
     artist <- Gen.option(Gen.alphaNumStr)
+    sleep <- Gen.option(Gen.oneOf(0, 15, 30, 45, 60, 90))
   } yield Workflow(rooms,
     pressPlay,
     pressPause,
@@ -21,6 +22,7 @@ trait WorkflowGenerator {
     volumeDown,
     volume,
     playlist,
-    artist)
+    artist,
+    sleep)
 
 }

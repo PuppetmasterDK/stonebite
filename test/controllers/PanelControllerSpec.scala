@@ -51,7 +51,7 @@ class PanelControllerSpec extends WordSpec
 
         status(result) mustBe Status.OK
         contentType(result).contains("application/json") mustBe true
-        contentAsJson(result) mustBe Json.toJson("success" -> true)
+        contentAsJson(result) mustBe Json.toJson(Map("success" -> true))
       }
     }
   }
