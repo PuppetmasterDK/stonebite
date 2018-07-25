@@ -12,6 +12,7 @@ trait TestCaseGenerator extends PlayerStatusGenerator with ErrorGenerator {
       error        <- genError(playerStatus)
       playlist     <- Gen.alphaNumStr.suchThat(!_.isEmpty)
       artist       <- Gen.alphaNumStr.suchThat(!_.isEmpty)
-    } yield TestCase(room, playerStatus, error, playlist, artist)
+      sleep        <- Gen.oneOf(0, 15, 30, 45, 60, 90)
+    } yield TestCase(room, playerStatus, error, playlist, artist, sleep)
 
 }
