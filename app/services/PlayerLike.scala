@@ -211,49 +211,4 @@ class PlayerLike @Inject()(ws: WSClient, configuration: Configuration)(
 
     }
 
-  /*
-  override def sleep(room: String, time: Int): Future[Either[Error, PlayerStatus]] =
-    getStatus(room).flatMap {
-      case Right(playerStatus) =>
-        playerStatus.sleep match {
-          case Some(timeout) if timeout < time =>
-            callSleepEndpoint(room, time).flatMap {
-              case Right(_) => sleep(room, time)
-              case Left(error) => Future.successful(Left(error))
-            }
-          case Some(_) => Future.successful(Right(playerStatus))
-          case None if time != 0 => callSleepEndpoint(room, time)
-          case None => getStatus(room)
-        }
-      case Left(error) => Future.successful(Left(error))
-    }
-
-  private def callSleepEndpoint(room: String, time: Int): Future[Either[Error, PlayerStatus]] =
-    roomToAddress(room).flatMap {
-      case Right(url) =>
-        ws.url(s"$url/Sleep")
-          .get()
-          .flatMap { response: WSResponse =>
-            response.status match {
-              case 200 => {
-                Logger.debug(s"SLEEP: ${(response.xml \ "sleep")}")
-                val sleepValue: Option[Int] = (response.xml \ "sleep" headOption).map(_.text).filterNot(_.isEmpty).map(_.toInt)
-                Logger.debug(s"Room '$room' now has sleep: '$sleepValue' in response ${response.body}")
-                if (sleepValue.contains(time)) {
-                  getStatus(room)
-                } else {
-                  callSleepEndpoint(room, time)
-                }
-              }
-              case _ =>
-                Future.successful(Left(Error(
-                  None,
-                  s"Calling Sleep for room '$room' failed with status: '${response.status}' and body '${response.body}'")))
-            }
-          }
-      case Left(error) => Future.successful(Left(error))
-
-    }
-
- */
 }

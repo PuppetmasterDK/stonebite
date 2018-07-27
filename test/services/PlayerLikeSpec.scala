@@ -313,6 +313,69 @@ class PlayerLikeSpec extends WordSpec
       }
     }
 
+    "Call the Play endpoint with unknown player" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case _ => Action { GatewayTimeout("Should not be called!") }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration()
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map.empty)))
+            }
+            val result = Await.result(player.play(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Play endpoint with error in GetPlayers" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case _ => Action { GatewayTimeout("Should not be called!") }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration()
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Left(Error(None, "Error happened")))
+            }
+            val result = Await.result(player.play(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
+    "Call the Status endpoint with unknown player" in {
+      forAll(genTestCase) { testCase =>
+        Server.withRouterFromComponents() { components =>
+          import Results._
+          import components.{defaultActionBuilder => Action}
+        {
+          case _ => Action { GatewayTimeout("Should not be called!") }
+        }
+        } { implicit port =>
+          WsTestClient.withClient { client =>
+            val configuration = Configuration()
+            val player = new PlayerLike(client, configuration) {
+              override def getPlayers: Future[Either[Error, Players]] = Future.successful(Right(Players(Map.empty)))
+            }
+            val result = Await.result(player.getStatus(testCase.room), 10.seconds)
+            result.isLeft mustBe true
+          }
+        }
+      }
+    }
+
     "Call the Pause endpoint and handle an exception" in {
       forAll(genTestCase) { testCase =>
         Server.withRouterFromComponents() { components =>
