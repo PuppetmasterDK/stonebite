@@ -167,8 +167,7 @@ class PanelServiceLikeSpec
       }
     }
 
-    /*
-    "Trigger Workflow" in {
+    "Triggerz Workflow" in {
       forAll(genPanelTestCase) { testCase =>
         println()
         println()
@@ -211,6 +210,11 @@ class PanelServiceLikeSpec
             playerService.playArtist _ when (room, artist) returns Future.successful(
               Left(Error(None, "Error")))))
 
+        testCase.workflow.sleep.foreach(sleep =>
+          testCase.workflow.rooms.foreach(room =>
+            playerService.sleep _ when (room, sleep) returns Future.successful(
+              Left(Error(None, "Error")))))
+
         val panelService = new PanelServiceLike(playerService)
         Await.result(panelService.addWorkflow(testCase.panelId,
                                               testCase.buttonId,
@@ -221,7 +225,6 @@ class PanelServiceLikeSpec
           false)
       }
     }
-*/
   }
 
 }

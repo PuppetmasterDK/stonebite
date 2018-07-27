@@ -95,25 +95,16 @@ class PanelServiceLike @Inject()(player: Player)(implicit ec: ExecutionContext)
       Future.successful(Nil)
     }
 
-    def handleResult(result: Future[List[Either[Error, PlayerStatus]]], action: String) = {
-
-      result.foreach(z => Logger.debug(s"handleResult $action: BEFORE $z"))
-      val t1: Future[List[Either[Error, PlayerStatus]]] = result.map(_.filter(t => t.isLeft))
-      t1.foreach(z => Logger.debug(s"handleResult $action: T1 $t1"))
-      val t2 = t1.map(_.isEmpty)
-      t2.foreach(z => Logger.debug(s"handleResult $action: T2 $t2"))
-
-      val x = result.map(
+    def handleResult(result: Future[List[Either[Error, PlayerStatus]]], action: String) =
+      result.map(
         _.filter(t => t.isLeft)
-          .foreach(e =>
+          .map(e => {
             Logger.error(
-              s"handleResult $action: Unable to trigger '$action' in workflow: $e: $workflow"))
+              s"handleResult $action: Unable to trigger '$action' in workflow: $e: $workflow")
+            true
+          })
           .isEmpty)
 
-      x.foreach(z => Logger.debug(s"handleResult $action: X $z"))
-
-      x
-    }
 
     val volume: Future[List[Either[Error, PlayerStatus]]] = Future.sequence(
       workflow.rooms.flatMap(room => workflow.volume.map(v => player.volume(room, v))))
