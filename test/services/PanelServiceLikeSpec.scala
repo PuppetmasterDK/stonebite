@@ -129,6 +129,21 @@ class PanelServiceLikeSpec
 
   "PanelServiceLike Error Path" should {
 
+    "Trigger Workflow but return error because of no rooms" in {
+      forAll(genPanelTestCase) { testCase =>
+        val playerService: Player = stub[Player]
+
+        val panelService = new PanelServiceLike(playerService)
+        Await.result(panelService.addWorkflow(testCase.panelId,
+          testCase.buttonId,
+          testCase.workflow.copy(rooms = Nil)),
+          5.seconds) mustBe Right(true)
+
+        Await.result(panelService.trigger(testCase.panelId, testCase.buttonId), 5.seconds) mustBe
+          Left(Error(None, "No rooms specified in workflow"))
+      }
+    }
+
     "Trigger Workflow with unknown button" in {
       forAll(genPanelTestCase) { testCase =>
         val playerService: Player = stub[Player]
