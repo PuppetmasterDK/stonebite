@@ -1,5 +1,5 @@
 # StoneBite
-[![Build Status](https://travis-ci.org/PuppetmasterDK/stonebite.svg?branch=master)](https://travis-ci.org/PuppetmasterDK/stonebite)
+[![Build Status](https://semaphoreci.com/api/v1/puppetmasterdk/stonebite/branches/master/badge.svg)](https://semaphoreci.com/puppetmasterdk/stonebite)
 [![Coverage Status](https://coveralls.io/repos/github/PuppetmasterDK/stonebite/badge.svg?branch=master)](https://coveralls.io/github/PuppetmasterDK/stonebite?branch=master)
 
 
