@@ -25,6 +25,10 @@ libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.1"
 // https://mvnrepository.com/artifact/net.straylightlabs/hola
 libraryDependencies += "net.straylightlabs" % "hola" % "0.2.2"
 
+// Docker Settings
+maintainer in Docker := "carsten@lutzen.dk"
+dockerRepository := Some("puppetmasterdk")
+dockerUpdateLatest := true
 
 val regexPackageBase = "dk\\.lutzen"
 coverageExcludedPackages :=

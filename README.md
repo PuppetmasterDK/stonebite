@@ -10,6 +10,8 @@ It have some convenience methods to ensure that pressing play does not give a br
 The endpoints are based on the API discussion here: https://helpdesk.bluesound.com/discussions/viewtopic.php?t=2293.
 And some more digging into network traffic
 
+A prebuilt docker image can also be found here: https://hub.docker.com/r/puppetmasterdk/stonebite/
+
 ## Further API Endpoints
 Playlists with all playlists:
 ```
